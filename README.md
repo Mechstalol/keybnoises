@@ -15,3 +15,6 @@ pip install pyinstaller
 pyinstaller --onefile keyboard_sounds.py
 ```
 The generated EXE will appear in the `dist` directory.
+
+## License
+This project is released under the [MIT License](LICENSE).
