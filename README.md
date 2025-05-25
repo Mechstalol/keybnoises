@@ -4,7 +4,6 @@ This project contains a small Python application that plays a sound whenever a k
 
 ## Structure
 - `keyboard_sounds.py` – main application.
-- `sounds/` – directory for your `.wav` files. Place a file named `key.wav` here or adjust the script to your filenames.
 
 ## Running
 1. Ensure Python 3 is installed on Windows.
