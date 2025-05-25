@@ -6,6 +6,8 @@
    ```bash
    python keyboard_sounds.py
    ```
+   If a requested WAV file is missing, the app now shows an error message
+   using `tk.messagebox.showerror`.
 
 
 ## Building an EXE

@@ -2,7 +2,6 @@ import os
 import random
 import re
 import tkinter as tk
-from tkinter import messagebox
 
 # Try winsound on Windows; otherwise fall back to playsound or no-op
 try:
@@ -85,23 +84,24 @@ class KeyNoiseApp(tk.Tk):
             return "modifier"
         return "basic"
 
-    def _play(self, path: str) -> None:
+    def _play_sound(self, path: str) -> None:
+        """Play the given WAV file or show an error dialog if it is missing."""
         if not os.path.exists(path):
-            messagebox.showerror("Missing sound", f"{path} not found")
-        else:
-            play_sound(path)
+            tk.messagebox.showerror("Missing sound", f"{path} not found")
+            return
+        play_sound(path)
 
     def _on_press(self, event: tk.Event) -> None:
         cat = self._category(event.keysym)
         pair = self.mapper.get_random_pair(cat)
         if pair:
             self.pressed[event.keysym] = pair
-            self._play(pair[0])
+            self._play_sound(pair[0])
 
     def _on_release(self, event: tk.Event) -> None:
         pair = self.pressed.pop(event.keysym, None)
         if pair:
-            self._play(pair[1])
+            self._play_sound(pair[1])
 
 
 if __name__ == "__main__":
