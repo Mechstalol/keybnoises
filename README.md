@@ -1,3 +1,5 @@
+yty24d-codex/create-windows-app-to-play-keyboard-noises
+
 
 ## Running
 1. Ensure Python 3 is installed on Windows.
@@ -9,7 +11,7 @@
    If a requested WAV file is missing, the app now shows an error message
    using `tk.messagebox.showerror`.
 
-
+main
 ## Building an EXE
 You can build a standalone Windows executable with `pyinstaller`:
 ```bash

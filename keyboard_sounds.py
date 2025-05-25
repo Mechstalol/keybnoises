@@ -15,6 +15,13 @@ except ImportError:
         def play_sound(path: str) -> None:
             pass
 
+# If you prefer pygame for playback and a dropdown UI, you can
+# swap in the pygame code below—otherwise the winsound/playsound 
+# logic above will work cross-platform.
+
+# Uncomment if you want to use pygame:
+# import pygame
+# pygame.mixer.init()
 
 class SoundMapper:
     """Load and provide random sound pairs for different key categories."""
@@ -32,15 +39,12 @@ class SoundMapper:
                 continue
             prefix, digits = match.groups()
             num = int(digits)
-            # only handle the “down” (odd) files here
-            if num % 2 == 0:
+            if num % 2 == 0:  # only odd (key-down) files here
                 continue
 
-            # build the matching “up” filename
             even_digits = str(num + 1).zfill(len(digits))
-            up_name = f"{prefix}{even_digits}.wav"
             down = os.path.join(self.sound_dir, name)
-            up   = os.path.join(self.sound_dir, up_name)
+            up   = os.path.join(self.sound_dir, f"{prefix}{even_digits}.wav")
             if not os.path.exists(up):
                 continue
 
@@ -58,6 +62,7 @@ class SoundMapper:
 
 class KeyNoiseApp(tk.Tk):
     """Main application window."""
+
     MODIFIERS = {
         "Return", "BackSpace", "Shift_L", "Shift_R",
         "Control_L", "Control_R", "Alt_L", "Alt_R", "Caps_Lock",
@@ -73,7 +78,6 @@ class KeyNoiseApp(tk.Tk):
 
         self.mapper = SoundMapper(sound_dir)
         self.pressed = {}
-        # bind both press and release
         self.bind_all("<KeyPress>",   self._on_press)
         self.bind_all("<KeyRelease>", self._on_release)
 
@@ -87,13 +91,21 @@ class KeyNoiseApp(tk.Tk):
     def _play_sound(self, path: str) -> None:
         """Play the given WAV file or show an error dialog if it is missing."""
         if not os.path.exists(path):
+ yty24d-codex/create-windows-app-to-play-keyboard-noises
+            messagebox.showerror("Missing sound", f"{path} not found")
+        else:
+            play_sound(path)
+            # If you uncommented pygame above, use:
+            # pygame.mixer.music.load(path)
+            # pygame.mixer.music.play()
+
             tk.messagebox.showerror("Missing sound", f"{path} not found")
             return
         play_sound(path)
+ main
 
     def _on_press(self, event: tk.Event) -> None:
-        cat = self._category(event.keysym)
-        pair = self.mapper.get_random_pair(cat)
+        pair = self.mapper.get_random_pair(self._category(event.keysym))
         if pair:
             self.pressed[event.keysym] = pair
             self._play_sound(pair[0])
