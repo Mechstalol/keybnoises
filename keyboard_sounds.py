@@ -40,16 +40,17 @@ class SoundMapper:
             # build the matching “up” filename
             even_digits = str(num + 1).zfill(len(digits))
             up_name = f"{prefix}{even_digits}.wav"
-            down_path = os.path.join(self.sound_dir, name)
-            up_path = os.path.join(self.sound_dir, up_name)
-            if not os.path.exists(up_path):
+            down = os.path.join(self.sound_dir, name)
+            up   = os.path.join(self.sound_dir, up_name)
+            if not os.path.exists(up):
                 continue
 
-            # categorize
-            key = ("space" if prefix.lower().startswith("a2-") and 1 <= num <= 8
-                   else "modifier" if prefix.lower().startswith("a2-")
-                   else "basic")
-            self.sounds[key].append((down_path, up_path))
+            key = (
+                "space"    if prefix.lower().startswith("a2-") and 1 <= num <= 8 else
+                "modifier" if prefix.lower().startswith("a2-") else
+                "basic"
+            )
+            self.sounds[key].append((down, up))
 
     def get_random_pair(self, category: str):
         pool = self.sounds.get(category, [])
@@ -58,7 +59,6 @@ class SoundMapper:
 
 class KeyNoiseApp(tk.Tk):
     """Main application window."""
-
     MODIFIERS = {
         "Return", "BackSpace", "Shift_L", "Shift_R",
         "Control_L", "Control_R", "Alt_L", "Alt_R", "Caps_Lock",
@@ -66,6 +66,7 @@ class KeyNoiseApp(tk.Tk):
 
     def __init__(self, sound_dir: str = "sounds") -> None:
         super().__init__()
+        self.sound_dir = sound_dir
         self.title("Keyboard Noises")
         self.geometry("300x100")
         self.label = tk.Label(self, text="Press keys to hear sounds")
@@ -73,6 +74,7 @@ class KeyNoiseApp(tk.Tk):
 
         self.mapper = SoundMapper(sound_dir)
         self.pressed = {}
+        # bind both press and release
         self.bind_all("<KeyPress>",   self._on_press)
         self.bind_all("<KeyRelease>", self._on_release)
 
