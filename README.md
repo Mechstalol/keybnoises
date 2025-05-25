@@ -1,3 +1,6 @@
+work
+Yah im just coding and shi
+
 # Keyboard Noises
 
 This project contains a small Python application that plays a sound whenever a key is pressed in the window.
