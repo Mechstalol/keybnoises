@@ -4,32 +4,27 @@ import re
 import tkinter as tk
 from tkinter import messagebox
 
+# Try winsound on Windows; otherwise fall back to playsound or no-op
 try:
     import winsound
-
     def play_sound(path: str) -> None:
         winsound.PlaySound(path, winsound.SND_FILENAME | winsound.SND_ASYNC)
-except ImportError:  # non-Windows fallback
+except ImportError:
     try:
         from playsound import playsound as play_sound  # type: ignore
-    except Exception:  # playsound not installed
+    except ImportError:
         def play_sound(path: str) -> None:
             pass
 
 
 class SoundMapper:
     """Load and provide random sound pairs for different key categories."""
+    _PATTERN = re.compile(r"(A2-|audio-)(\d+)\.wav$", re.IGNORECASE)
 
     def __init__(self, sound_dir: str = "sounds") -> None:
         self.sound_dir = sound_dir
-        self.sounds = {
-            "space": [],
-            "modifier": [],
-            "basic": [],
-        }
+        self.sounds = {"space": [], "modifier": [], "basic": []}
         self._load_sounds()
-
-    _PATTERN = re.compile(r"(A2-|audio-)(\d+)\.wav$", re.IGNORECASE)
 
     def _load_sounds(self) -> None:
         for name in os.listdir(self.sound_dir):
@@ -38,32 +33,36 @@ class SoundMapper:
                 continue
             prefix, digits = match.groups()
             num = int(digits)
-            if num % 2 == 0:  # expect odd numbers only for down sounds
+            # only handle the “down” (odd) files here
+            if num % 2 == 0:
                 continue
+
+            # build the matching “up” filename
             even_digits = str(num + 1).zfill(len(digits))
-            pair_name = f"{prefix}{even_digits}.wav"
-            pair_path = os.path.join(self.sound_dir, pair_name)
-            if not os.path.exists(pair_path):
+            up_name = f"{prefix}{even_digits}.wav"
+            down_path = os.path.join(self.sound_dir, name)
+            up_path = os.path.join(self.sound_dir, up_name)
+            if not os.path.exists(up_path):
                 continue
-            path = os.path.join(self.sound_dir, name)
-            pair = (path, pair_path)
-            if prefix.lower().startswith("a2-"):
-                if 1 <= num <= 8:
-                    self.sounds["space"].append(pair)
-                else:
-                    self.sounds["modifier"].append(pair)
-            else:  # audio-
-                self.sounds["basic"].append(pair)
+
+            # categorize
+            key = ("space" if prefix.lower().startswith("a2-") and 1 <= num <= 8
+                   else "modifier" if prefix.lower().startswith("a2-")
+                   else "basic")
+            self.sounds[key].append((down_path, up_path))
 
     def get_random_pair(self, category: str):
-        pool = self.sounds.get(category)
-        if not pool:
-            return None
-        return random.choice(pool)
+        pool = self.sounds.get(category, [])
+        return random.choice(pool) if pool else None
 
 
 class KeyNoiseApp(tk.Tk):
     """Main application window."""
+
+    MODIFIERS = {
+        "Return", "BackSpace", "Shift_L", "Shift_R",
+        "Control_L", "Control_R", "Alt_L", "Alt_R", "Caps_Lock",
+    }
 
     def __init__(self, sound_dir: str = "sounds") -> None:
         super().__init__()
@@ -71,22 +70,11 @@ class KeyNoiseApp(tk.Tk):
         self.geometry("300x100")
         self.label = tk.Label(self, text="Press keys to hear sounds")
         self.label.pack(expand=True)
+
         self.mapper = SoundMapper(sound_dir)
         self.pressed = {}
-        self.bind_all("<KeyPress>", self._on_press)
+        self.bind_all("<KeyPress>",   self._on_press)
         self.bind_all("<KeyRelease>", self._on_release)
-
-    MODIFIERS = {
-        "Return",
-        "BackSpace",
-        "Shift_L",
-        "Shift_R",
-        "Control_L",
-        "Control_R",
-        "Alt_L",
-        "Alt_R",
-        "Caps_Lock",
-    }
 
     def _category(self, keysym: str) -> str:
         if keysym == "space":
@@ -98,16 +86,15 @@ class KeyNoiseApp(tk.Tk):
     def _play(self, path: str) -> None:
         if not os.path.exists(path):
             messagebox.showerror("Missing sound", f"{path} not found")
-            return
-        play_sound(path)
+        else:
+            play_sound(path)
 
     def _on_press(self, event: tk.Event) -> None:
-        category = self._category(event.keysym)
-        pair = self.mapper.get_random_pair(category)
-        if pair is None:
-            return
-        self.pressed[event.keysym] = pair
-        self._play(pair[0])
+        cat = self._category(event.keysym)
+        pair = self.mapper.get_random_pair(cat)
+        if pair:
+            self.pressed[event.keysym] = pair
+            self._play(pair[0])
 
     def _on_release(self, event: tk.Event) -> None:
         pair = self.pressed.pop(event.keysym, None)
